@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ContactsApi.Domain\ContactsApi.Domain.csproj" />
+    <ProjectReference Include="..\ContactsApi.Infrastructures\ContactsApi.Infrastructures.csproj" />
+  </ItemGroup>
+
 </Project>

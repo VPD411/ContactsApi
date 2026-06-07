@@ -1,3 +1,5 @@
+using ContactsApi.Application.Abstractions;
+using ContactsApi.Application.Services;
 using ContactsApi.Infrastructures.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args); // Создаем builder, который да
 
 // Подключем SQLite
 builder.Services.AddDbContext<ContactsDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Сервисы
+builder.Services.AddScoped<IContactsService, ContactsService>();
 
 // Контроллеры
 builder.Services.AddControllers(); // Добавляет контроллеры

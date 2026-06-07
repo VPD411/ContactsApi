@@ -1,7 +1,6 @@
-﻿using ContactsApi.Domain.Models;
-using ContactsApi.Infrastructures.DataAccess.Context;
+﻿using ContactsApi.Application.Abstractions;
+using ContactsApi.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ContactsApi.Web.Controllers;
 
@@ -9,11 +8,11 @@ namespace ContactsApi.Web.Controllers;
 [ApiController]
 public class ContactsController : ControllerBase
 {
-    private readonly ContactsDbContext _context;
+    private readonly IContactsService _service;
 
-    public ContactsController(ContactsDbContext context)
+    public ContactsController(IContactsService service)
     {
-        _context = context;
+        _service = service;
     }
 
     // GET - Запрос на получение
@@ -22,7 +21,7 @@ public class ContactsController : ControllerBase
     public async Task<ActionResult<List<Contact>>> GetAll(CancellationToken cancellationToken)
     {
         // Возвращаем список всех контактов, полученных из таблицы Contacts
-        return Ok(await _context.Contacts.ToListAsync(cancellationToken));
+        return Ok(await _service.GetAllAsync(cancellationToken));
     }
 
     // GET - Запрос на получение
@@ -30,17 +29,12 @@ public class ContactsController : ControllerBase
     [HttpGet("{id::guid}")]
     public async Task<ActionResult<Contact>> Get(Guid id, CancellationToken cancellationToken)
     {
-        // Пытаемся найти контакт
-        var contact = await _context.Contacts.FindAsync([id], cancellationToken);
-
-        // Если не нашли - 404 (не найдено)
-        if (contact == null)
+        var result = await _service.GetByIdAsync(id, cancellationToken);
+        if (result == null)
         {
             return NotFound();
         }
-
-        // Нашли - возвращаем найденный
-        return Ok(contact);
+        return Ok(result);
     }
 
     // POST - Запрос на создание
@@ -48,14 +42,8 @@ public class ContactsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Contact>> CreateContact([FromBody] Contact contact, CancellationToken cancellationToken)
     {
-        // Получаем contact из тела HTTP запроса с помощью [FromBody] и добавляем
-        await _context.Contacts.AddAsync(contact, cancellationToken);
-
-        // Сохраняем изменения
-        await _context.SaveChangesAsync(cancellationToken); // Обязательно при изменении данных в БД
-
-        // Возвращает код 201 и ищет созданную в бд сущность
-        return CreatedAtAction(nameof(Get), new { id = contact.Id }, contact);
+        var result = await _service.CreateAsync(contact, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
     // PUT - Запрос на обновление
@@ -63,20 +51,8 @@ public class ContactsController : ControllerBase
     [HttpPut("{id::guid}")]
     public async Task<ActionResult> Update(Guid id, [FromBody] Contact contact, CancellationToken cancellationToken)
     {
-        // Если id запроса и id в contact не совпадает - плохой запрос (HTTP 400)
-        if (id != contact.Id)
-        {
-            return BadRequest(); // HTTP 400
-        }
-
-        // Обновляем полученную сущность
-        _context.Contacts.Update(contact);
-
-        // Сохраняем изменения
-        await _context.SaveChangesAsync(cancellationToken);
-
-        // 204 - Всё ок, но ничего не возвращаем
-        return NoContent(); // HTTP 204
+        var result = await _service.UpdateAsync(id, contact, cancellationToken);
+        return NoContent();
     }
 
 
@@ -85,21 +61,7 @@ public class ContactsController : ControllerBase
     [HttpDelete("{id::guid}")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        // Пытаемся найти контакт
-        var contact = await _context.Contacts.FindAsync([id], cancellationToken);
-
-        // Если не нашли - 404
-        if (contact == null)
-        {
-            return NotFound();
-        }
-
-        // Убираем элемент из бд
-        _context.Contacts.Remove(contact);
-
-        // Сохраняем изменения
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

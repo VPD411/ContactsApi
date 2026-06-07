@@ -1,4 +1,5 @@
 using ContactsApi.Application.Abstractions;
+using ContactsApi.Application.Mapping;
 using ContactsApi.Application.Services;
 using ContactsApi.Infrastructures.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,12 @@ builder.Services.AddScoped<IContactsService, ContactsService>();
 builder.Services.AddControllers(); // Добавляет контроллеры
 builder.Services.AddEndpointsApiExplorer(); // Добавляем "обозреватель" API эндпоинтов
 builder.Services.AddSwaggerGen(); // Добавляем Swagger
+
+// Маппер
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+});
 
 var app = builder.Build();
 
